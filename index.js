@@ -20,20 +20,20 @@ app.get('/:id', (req, res) => {
     }
 });
 
-// app.put('/:id', (req, res) => {
-//     const id = req.params.id;
-//     const newUrl = req.body.url;
-//     if (id in urls) {
-//         if (validUrl.isUri(newUrl)) {
-//             urls[id] = newUrl;
-//             res.status(200).send('200');
-//         } else {
-//             res.status(400).send('error');
-//         }
-//     } else {
-//         res.status(404).send('404');
-//     }
-// });
+app.put('/:id', (req, res) => {
+    const id = req.params.id;
+    const newUrl = req.body.url;
+    if (Object.keys(urls).includes(id)) {
+        if (validUrl.isUri(newUrl)) {
+            urls[id] = newUrl;
+            res.status(200).send('200');
+        } else {
+            res.status(400).send('error');
+        }
+    } else {
+        res.status(404).send('404');
+    }
+});
 
 app.delete('/:id', (req, res) => {
     const id = req.params.id;
