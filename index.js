@@ -3,9 +3,6 @@ const app = express();
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 
-// const url = require('url');
-const validUrl = require('valid-url');
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -24,7 +21,7 @@ app.put('/:id', (req, res) => {
     const id = req.params.id;
     const newUrl = req.body.url;
     if (Object.keys(urls).includes(id)) {
-        if (validUrl.isUri(newUrl)) {
+        if (isValidURL(newUrl)) {
             urls[id] = newUrl;
             res.status(200).send('200');
         } else {
@@ -49,22 +46,12 @@ app.get('/', (req, res) => {
     res.status(200).send(Object.keys(urls));
 });
 
-function generateShortUrl(longUrl) {
-    let shortUrl;
-    do {
-        const hashObject = longUrl + Date.now();
-        const hash = crypto.createHash('md5').update(hashObject).digest('hex');
-        shortUrl = hash.slice(0, 4);
-    } while (Object.keys(urls).includes(shortUrl));
-    return shortUrl;
-}
-
 app.post('/', (req, res) => {
     const newUrl = req.body.url;
     if (Object.values(urls).includes(newUrl)) {
         res.status(201).send(Object.keys(urls).find(key => urls[key] === newUrl));
     } else {
-        if (validUrl.isUri(newUrl)) {
+        if (isValidURL(newUrl)) {
             const id = generateShortUrl(newUrl);
             urls[id] = newUrl;
             res.status(201).send(id);
@@ -77,6 +64,21 @@ app.post('/', (req, res) => {
 app.delete('/', (req, res) => {
     res.status(404).send('404');
 });
+
+function isValidURL(url) {
+    var urlPattern = /^(https?):\/\/[^\s\/$.?#].[^\s]*$/;
+    return urlPattern.test(url);
+}
+
+function generateShortUrl(longUrl) {
+    let shortUrl;
+    do {
+        const hashObject = longUrl + Date.now();
+        const hash = crypto.createHash('md5').update(hashObject).digest('hex');
+        shortUrl = hash.slice(0, 4);
+    } while (Object.keys(urls).includes(shortUrl));
+    return shortUrl;
+}
 
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
