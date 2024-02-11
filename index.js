@@ -20,7 +20,6 @@ app.get('/:id', (req, res) => {
 app.put('/:id', (req, res) => {
     const id = req.params.id;
     const newUrl = req.body.url;
-    console.log(req);
     if (Object.keys(urls).includes(id)) {
         if (isValidURL(newUrl)) {
             urls[id] = newUrl;
