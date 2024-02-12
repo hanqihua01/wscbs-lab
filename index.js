@@ -3,9 +3,30 @@ const app = express();
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 
+app.use((req, res, next) => {
+    let data = '';
+    req.on('data', chunk => {
+        data += chunk;
+    });
+    req.on('end', () => {
+        console.log('Raw data: ', data);
+        next();
+    });
+});
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
 const urls = {};
 
-app.use(bodyParser.urlencoded({ extended: true }));
+app.get('/:id', (req, res) => {
+    const id = req.params.id;
+    if (Object.keys(urls).includes(id)) {
+        res.status(301).json({ id: id, value: urls[id] });
+    } else {
+        res.status(404).send('ID not found');
+    }
+});
 
 app.put('/:id', (req, res) => {
     const id = req.params.id;
@@ -17,17 +38,6 @@ app.put('/:id', (req, res) => {
         } else {
             res.status(400).send('URL not valid');
         }
-    } else {
-        res.status(404).send('ID not found');
-    }
-});
-
-app.use(bodyParser.json());
-
-app.get('/:id', (req, res) => {
-    const id = req.params.id;
-    if (Object.keys(urls).includes(id)) {
-        res.status(301).json({ id: id, value: urls[id] });
     } else {
         res.status(404).send('ID not found');
     }
