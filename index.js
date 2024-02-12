@@ -80,7 +80,7 @@ app.delete('/', (req, res) => {
 });
 
 function isValidURL(url) {
-    var urlPattern = /^(https?):\/\/[^\s\/$.?#].[^\s]*$/;
+    var urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})(:[0-9]{1,5})?(\/[^\s]*)?$/;
     return urlPattern.test(url);
 }
 
