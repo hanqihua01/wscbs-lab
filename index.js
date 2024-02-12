@@ -89,7 +89,7 @@ function generateShortUrl(longUrl) {
     do {
         const hashObject = longUrl + Date.now();
         const hash = crypto.createHash('md5').update(hashObject).digest('hex');
-        shortUrl = hash.slice(0, 2);
+        shortUrl = hash.slice(0, 4);
     } while (Object.keys(urls).includes(shortUrl));
     return shortUrl;
 }
