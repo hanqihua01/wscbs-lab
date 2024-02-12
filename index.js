@@ -3,17 +3,6 @@ const app = express();
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 
-app.use((req, res, next) => {
-    let data = '';
-    req.on('data', chunk => {
-        data += chunk;
-    });
-    req.on('end', () => {
-        console.log('Raw data: ', data);
-        next();
-    });
-});
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
