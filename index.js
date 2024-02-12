@@ -3,7 +3,11 @@ const app = express();
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({
+    type(req) {
+        return true;
+    }
+}));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const urls = {};
@@ -18,6 +22,7 @@ app.get('/:id', (req, res) => {
 });
 
 app.put('/:id', (req, res) => {
+    console.log(req.body)
     const id = req.params.id;
     const newUrl = req.body.url;
     if (Object.keys(urls).includes(id)) {
