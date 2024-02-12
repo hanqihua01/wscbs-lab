@@ -3,19 +3,9 @@ const app = express();
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
 const urls = {};
 
-app.get('/:id', (req, res) => {
-    const id = req.params.id;
-    if (Object.keys(urls).includes(id)) {
-        res.status(301).json({ id: id, value: urls[id] });
-    } else {
-        res.status(404).send('ID not found');
-    }
-});
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.put('/:id', (req, res) => {
     const id = req.params.id;
@@ -27,6 +17,17 @@ app.put('/:id', (req, res) => {
         } else {
             res.status(400).send('URL not valid');
         }
+    } else {
+        res.status(404).send('ID not found');
+    }
+});
+
+app.use(bodyParser.json());
+
+app.get('/:id', (req, res) => {
+    const id = req.params.id;
+    if (Object.keys(urls).includes(id)) {
+        res.status(301).json({ id: id, value: urls[id] });
     } else {
         res.status(404).send('ID not found');
     }
@@ -50,7 +51,7 @@ app.get('/', (req, res) => {
         values.push(urls[key]);
     }
     if (ids.length !== 0) {
-        res.status(200).json({ id: ids, value: values});
+        res.status(200).json({ id: ids, value: values });
     } else {
         res.status(404).json({ id: undefined, value: undefined });
     }
@@ -60,12 +61,12 @@ app.post('/', (req, res) => {
     const newUrl = req.body.value;
     if (Object.values(urls).includes(newUrl)) {
         const id = Object.keys(urls).find(key => urls[key] === newUrl);
-        res.status(201).json({ id: id, value: urls[id]});
+        res.status(201).json({ id: id, value: urls[id] });
     } else {
         if (isValidURL(newUrl)) {
             const id = generateShortUrl(newUrl);
             urls[id] = newUrl;
-            res.status(201).json({ id: id, value: urls[id]});
+            res.status(201).json({ id: id, value: urls[id] });
         } else {
             res.status(400).send('URL not valid');
         }
@@ -89,7 +90,7 @@ function generateShortUrl(longUrl) {
     do {
         const hashObject = longUrl + Date.now();
         const hash = crypto.createHash('md5').update(hashObject).digest('hex');
-        shortUrl = hash.slice(0, 4);
+        shortUrl = hash.slice(0, 2);
     } while (Object.keys(urls).includes(shortUrl));
     return shortUrl;
 }

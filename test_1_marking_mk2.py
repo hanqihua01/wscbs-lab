@@ -1,6 +1,8 @@
 import unittest
 import requests
 import json
+import csv
+import random
 
 
 class TestApi(unittest.TestCase):
@@ -8,16 +10,21 @@ class TestApi(unittest.TestCase):
     base_url = "http://127.0.0.1:8000"
     
 
+    def populate_variables_from_csv(self):
+        with open('read_from.csv', 'r') as f:
+            reader = csv.reader(f)
+            next(reader, None)
+            data = [row for row in reader if len(row) >= 5]
+            random_row = random.choice(data)
+            return random_row
 
     def setUp(self):
         # populate data before each test by doing two POST
-        #TODO make it read data from a csv or similar to avoid people hardcoding answers
-        self.url_to_shorten_1="https://en.wikipedia.org/wiki/Docker_(software)"
-        self.url_to_shorten_2="https://fastapi.tiangolo.com"
         self.id_shortened_url_1=""
         self.id_shortened_url_2=""
         
-
+        self.url_to_shorten_1,self.url_to_shorten_2,self.url_after_update,self.not_existing_id,self.invalid_url=self.populate_variables_from_csv()
+        
         def do_post(url_to_shorten):
             endpoint = "/"       
             print(url_to_shorten)
@@ -82,14 +89,14 @@ class TestApi(unittest.TestCase):
 
         id = self.id_shortened_url_1
         url_to_update = self.id_shortened_url_1
-        url_after_update = "https://en.wikipedia.org/wiki/Cypherpunk"
-        not_existing_id = "not_existing_id"
-        invalid_url = "pip_install_requests"
+        url_after_update = self.url_after_update
+        not_existing_id = self.not_existing_id
+        invalid_url = self.invalid_url
+
 
         endpoint = "/"
-        url = f"{self.base_url}{endpoint}{id}"   
-        # response = requests.put(url, data=json.dumps({'url': url_after_update}))
-        response = requests.put(url, data={'url': url_after_update})
+        url = f"{self.base_url}{endpoint}{id}"
+        response = requests.put(url, data=json.dumps({'url': url_after_update}))
         self.assertEqual(response.status_code, 200, f"Expected status code 200, but got {response.status_code}")
 
         #check value has been rally changed by doing a get
@@ -149,9 +156,7 @@ class TestApi(unittest.TestCase):
         url_to_shorten="https://en.wikipedia.org/wiki/Docker_(software)"
         endpoint = "/"    
 
-        #url = f"{self.base_url}{endpoint}?value={url_to_shorten}"   
-        #response = requests.post(url)
-
+        
         url = f"{self.base_url}{endpoint}"   
         response = requests.post(url, json={'value': str(url_to_shorten)})
 
@@ -176,7 +181,6 @@ class TestApi(unittest.TestCase):
         self.assertEqual(response.status_code, 400, f"Expected status code 400, but got {response.status_code}")
        
         
-    
     """
     / DELETE    
     Deletes all ID/URL pairs in the service.
