@@ -44,13 +44,15 @@ app.delete('/:id', (req, res) => {
 
 app.get('/', (req, res) => {
     const ids = [];
+    const values = [];
     for (const key in urls) {
         ids.push(key);
+        values.push(urls[key]);
     }
     if (ids.length !== 0) {
-        res.status(200).json({ value: ids});
+        res.status(200).json({ id: ids, value: values});
     } else {
-        res.status(404).json({ value: undefined });
+        res.status(404).json({ id: undefined, value: undefined });
     }
 });
 
