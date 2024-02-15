@@ -83,6 +83,11 @@ app.delete('/', (req, res) => {
     res.status(404).send('404');
 });
 
+// function isValidURL(url) {
+//     var urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})(:[0-9]{1,5})?(\/[^\s]*)?$/;
+//     return urlPattern.test(url);
+// }
+
 function isValidURL(url) {
     var urlPattern = new RegExp(
         "^https?:\/\/" + // 匹配以 http:// 或 https:// 开头
