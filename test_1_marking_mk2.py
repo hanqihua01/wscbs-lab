@@ -95,7 +95,7 @@ class TestApi(unittest.TestCase):
 
 
         endpoint = "/"
-        url = f"{self.base_url}{endpoint}{id}"
+        url = f"{self.base_url}{endpoint}{id}"   
         response = requests.put(url, data=json.dumps({'url': url_after_update}))
         self.assertEqual(response.status_code, 200, f"Expected status code 200, but got {response.status_code}")
 
