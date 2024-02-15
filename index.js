@@ -85,10 +85,10 @@ app.delete('/', (req, res) => {
 
 function isValidURL(url) {
     var urlPattern = new RegExp(
-        "^https?:\/\/" +
+        "^https?:\/\/" + // 匹配以 http:// 或 https:// 开头
         "(?:" + // 开始非捕获组
-            "(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z]{2,6}\\.?" +
-            "|" +
+            "(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z]{2,6}\\.?" + // 匹配域名
+            "|" + // 或
             "localhost" + // 匹配 localhost
             "|" + // 或
             "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}" + // 匹配 IPv4 地址
