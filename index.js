@@ -22,7 +22,6 @@ app.get('/:id', (req, res) => {
 });
 
 app.put('/:id', (req, res) => {
-    console.log(req.body)
     const id = req.params.id;
     const newUrl = req.body.url;
     if (Object.keys(urls).includes(id)) {
@@ -85,7 +84,19 @@ app.delete('/', (req, res) => {
 });
 
 function isValidURL(url) {
-    var urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})(:[0-9]{1,5})?(\/[^\s]*)?$/;
+    var urlPattern = new RegExp(
+        "^https?:\/\/" +
+        "(?:" + // 开始非捕获组
+            "(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z]{2,6}\\.?" +
+            "|" +
+            "localhost" + // 匹配 localhost
+            "|" + // 或
+            "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}" + // 匹配 IPv4 地址
+        ")" + // 结束非捕获组
+        "(?::\\d+)?" + // 匹配可选的端口号
+        "(?:/?|[/?]\\S+)$" // 匹配可选的路径或查询字符串
+    );
+
     return urlPattern.test(url);
 }
 
