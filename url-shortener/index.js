@@ -15,6 +15,7 @@ const urls = {};
 
 const authenticateMiddleware = (req, res, next) => {
     const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(403).send('Forbidden');
     const token = authHeader.split(' ')[1];
     if (!token) return res.status(403).send('Forbidden');
 
@@ -51,16 +52,59 @@ const authenticateMiddleware = (req, res, next) => {
 //     ]
 // }
 
-app.get('/:id', (req, res) => {
+app.get('/:id', authenticateMiddleware, (req, res) => {
+    const user = req.body.user;
+    const shortUrl = req.params.id;
+    if (Object.keys(urls).includes(user)) {
+        for (const url of urls[user]) {
+            if (url.shortUrl === shortUrl) {
+                return res.status(301).json({ url: url.url });
+            }
+        }
+    }
+    return res.status(404).send('Not found');
 });
 
-app.put('/:id', (req, res) => {
+app.put('/:id', authenticateMiddleware, (req, res) => {
+    const user = req.body.user;
+    const shortUrl = req.params.id;
+    const newUrl = req.body.url;
+    if (Object.keys(urls).includes(user)) {
+        for (const url of urls[user]) {
+            if (url.shortUrl === shortUrl) {
+                if (!isValidURL(newUrl)) {
+                    return res.status(400).send('URL not valid');
+                } else {
+                    url.url = newUrl;
+                    return res.status(200).send('Updated');
+                }
+            }
+        }
+    }
+    return res.status(404).send('Not found');
 });
 
-app.delete('/:id', (req, res) => {
+app.delete('/:id', authenticateMiddleware, (req, res) => {
+    const user = req.body.user;
+    const shortUrl = req.params.id;
+    if (Object.keys(urls).includes(user)) {
+        for (let i = 0; i < urls[user].length; i++) {
+            if (urls[user][i].shortUrl === shortUrl) {
+                urls[user].splice(i, 1);
+                return res.status(204).send('Deleted');
+            }
+        }
+    }
+    return res.status(404).send('Not found');
 });
 
-app.get('/', (req, res) => {
+app.get('/', authenticateMiddleware, (req, res) => {
+    const user = req.body.user;
+    if (Object.keys(urls).includes(user)) {
+        return res.status(200).json(urls[user]);
+    } else {
+        return res.status(200).json([]);
+    }
 });
 
 app.post('/', authenticateMiddleware, (req, res) => {
@@ -92,8 +136,10 @@ app.post('/', authenticateMiddleware, (req, res) => {
     }
 });
 
-app.delete('/', (req, res) => {
-
+app.delete('/', authenticateMiddleware, (req, res) => {
+    const user = req.body.user;
+    urls[user] = [];
+    return res.status(404).send('Deleted all URLs for the user');
 });
 
 function isValidURL(url) {
