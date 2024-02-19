@@ -15,7 +15,7 @@ const users = {}; // 存储用户信息
 app.post('/users', async (req, res) => {
     const { username, password } = req.body;
     if (users[username]) {
-        return res.status(409).send('Username duplicated');
+        return res.status(409).json({ 'detail': 'duplicate'});
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     users[username] = { password: hashedPassword };
@@ -24,14 +24,14 @@ app.post('/users', async (req, res) => {
 
 // 更新
 app.put('/users', async (req, res) => {
-    const { username, 'old-password': oldPassword, 'new-password': newPassword } = req.body;
+    const { username, 'password': oldPassword, 'new_password': newPassword } = req.body;
     const user = users[username];
     if (user && await bcrypt.compare(oldPassword, user.password)) {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         users[username].password = hashedPassword;
         res.status(200).send('Password updated');
     } else {
-        res.status(403).send('Forbidden');
+        res.status(403).json({ 'detail': 'forbidden'});
     }
 });
 
@@ -52,7 +52,7 @@ app.post('/users/login', async (req, res) => {
         const token = `${encodedHeader}.${encodedPayload}.${signature}`;
         res.status(200).json({ token });
     } else {
-        res.status(403).send('Forbidden');
+        res.status(403).json({ 'detail': 'forbidden'});
     }
 });
 
@@ -81,6 +81,6 @@ app.post('/users/authenticate', (req, res) => {
     }
 });
 
-app.listen(9000, () => {
-    console.log('Server is running on port 9000');
+app.listen(8000, () => {
+    console.log('Server is running on port 8000');
 });

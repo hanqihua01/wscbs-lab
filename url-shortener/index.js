@@ -19,7 +19,7 @@ const authenticateMiddleware = (req, res, next) => {
     const token = authHeader.split(' ')[1];
     if (!token) return res.status(403).send('Forbidden');
 
-    axios.post('http://localhost:9000/users/authenticate', { token })
+    axios.post('http://localhost:8000/users/authenticate', { token })
         .then(response => {
             req.body.user = response.data.username;
             next();
@@ -169,6 +169,6 @@ function generateShortUrl(longUrl) {
     return shortUrl;
 }
 
-app.listen(8000, () => {
-    console.log('Server is running on port 8000');
+app.listen(8080, () => {
+    console.log('Server is running on port 8080');
 });
