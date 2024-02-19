@@ -1,9 +1,11 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 const secretKey = process.env.JWT_SECRET; // 从环境变量中读取密钥
@@ -23,7 +25,6 @@ app.post('/users', async (req, res) => {
 // 更新
 app.put('/users', async (req, res) => {
     const { username, 'old-password': oldPassword, 'new-password': newPassword } = req.body;
-    console.log(username, oldPassword, newPassword)
     const user = users[username];
     if (user && await bcrypt.compare(oldPassword, user.password)) {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -55,7 +56,7 @@ app.post('/users/login', async (req, res) => {
     }
 });
 
-// URL-shortener 服务接收 token 后，需要请求 authenticator 服务验证 token 的有效性，以及获取用户信息。
+// 验证
 app.post('/users/authenticate', (req, res) => {
     const token = req.body.token;
     const tokenParts = token.split('.');

@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
+const axios = require('axios');
 
 app.use(bodyParser.json({
     type(req) {
@@ -12,68 +13,79 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 const urls = {};
 
+// urls = {
+//     'user1': [
+//         {
+//             'url': 'https://www.google.com',
+//             'shortUrl': 'go'
+//         },
+//         {
+//             'url': 'https://www.baidu.com',
+//             'shortUrl': 'bd'
+//         }
+//     ],
+//     'user2': [
+//         {
+//             'url': 'https://www.bing.com',
+//             'shortUrl': 'bi'
+//         },
+//         {
+//             'url': 'https://www.yahoo.com',
+//             'shortUrl': 'yh'
+//         }
+//     ]
+// }
+
 app.get('/:id', (req, res) => {
-    const id = req.params.id;
-    if (Object.keys(urls).includes(id)) {
-        res.status(301).json({ id: id, value: urls[id] });
-    } else {
-        res.status(404).send('ID not found');
-    }
 });
 
 app.put('/:id', (req, res) => {
-    const id = req.params.id;
-    const newUrl = req.body.url;
-    if (Object.keys(urls).includes(id)) {
-        if (isValidURL(newUrl)) {
-            urls[id] = newUrl;
-            res.status(200).json({ id: id, value: urls[id] });
-        } else {
-            res.status(400).send('URL not valid');
-        }
-    } else {
-        res.status(404).send('ID not found');
-    }
 });
 
 app.delete('/:id', (req, res) => {
-    const id = req.params.id;
-    if (Object.keys(urls).includes(id)) {
-        delete urls[id];
-        res.status(204).send('DELETE successfull');
-    } else {
-        res.status(404).send('ID not found');
-    }
 });
 
 app.get('/', (req, res) => {
-    const ids = [];
-    const values = [];
-    for (const key in urls) {
-        ids.push(key);
-        values.push(urls[key]);
-    }
-    if (ids.length !== 0) {
-        res.status(200).json({ id: ids, value: values });
-    } else {
-        res.status(404).json({ id: undefined, value: undefined });
-    }
 });
 
 app.post('/', (req, res) => {
-    const newUrl = req.body.value;
-    if (Object.values(urls).includes(newUrl)) {
-        const id = Object.keys(urls).find(key => urls[key] === newUrl);
-        res.status(201).json({ id: id, value: urls[id] });
-    } else {
-        if (isValidURL(newUrl)) {
-            const id = generateShortUrl(newUrl);
-            urls[id] = newUrl;
-            res.status(201).json({ id: id, value: urls[id] });
-        } else {
-            res.status(400).send('URL not valid');
-        }
-    }
+    const authHeader = req.headers.authorization;
+    const token = authHeader.split(' ')[1];
+    if (!token) return res.status(403).send('Forbidden');
+
+    axios.post('http://localhost:9000/users/authenticate', { token })
+        .then(response => {
+            const user = response.data.username;
+            const newUrl = req.body.url;
+            if (Object.values(urls).includes(user)) {
+                // 判断该用户是否已经存在该 URL
+                const userUrls = urls[user];
+                for (const url of userUrls) {
+                    if (url.url === newUrl) {
+                        return res.status(201).json({ id: url.shortUrl });
+                    }
+                }
+                console.log('newUrl', newUrl);
+                if (!isValidURL(newUrl)) {
+                    return res.status(400).send('URL not valid');
+                } else {
+                    const shortUrl = generateShortUrl(newUrl);
+                    urls[user].push({ url: newUrl, shortUrl });
+                    return res.status(201).json({ id: shortUrl });
+                }
+            } else {
+                if (!isValidURL(newUrl)) {
+                    return res.status(400).send('URL not valid');
+                } else {
+                    const shortUrl = generateShortUrl(newUrl);
+                    urls[user] = [{ url: newUrl, shortUrl }];
+                    return res.status(201).json({ id: shortUrl });
+                }
+            }
+        })
+        .catch(error => {
+            res.status(403).send('Forbidden');
+        });
 });
 
 app.delete('/', (req, res) => {
@@ -82,11 +94,6 @@ app.delete('/', (req, res) => {
     }
     res.status(404).send('404');
 });
-
-// function isValidURL(url) {
-//     var urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})(:[0-9]{1,5})?(\/[^\s]*)?$/;
-//     return urlPattern.test(url);
-// }
 
 function isValidURL(url) {
     var urlPattern = new RegExp(
