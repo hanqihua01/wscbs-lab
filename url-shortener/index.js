@@ -13,6 +13,21 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 const urls = {};
 
+const authenticateMiddleware = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader.split(' ')[1];
+    if (!token) return res.status(403).send('Forbidden');
+
+    axios.post('http://localhost:9000/users/authenticate', { token })
+        .then(response => {
+            req.body.user = response.data.username;
+            next();
+        })
+        .catch(error => {
+            res.status(403).send('Forbidden');
+        });
+}
+
 // urls = {
 //     'user1': [
 //         {
@@ -48,62 +63,48 @@ app.delete('/:id', (req, res) => {
 app.get('/', (req, res) => {
 });
 
-app.post('/', (req, res) => {
-    const authHeader = req.headers.authorization;
-    const token = authHeader.split(' ')[1];
-    if (!token) return res.status(403).send('Forbidden');
-
-    axios.post('http://localhost:9000/users/authenticate', { token })
-        .then(response => {
-            const user = response.data.username;
-            const newUrl = req.body.url;
-            if (Object.values(urls).includes(user)) {
-                // 判断该用户是否已经存在该 URL
-                const userUrls = urls[user];
-                for (const url of userUrls) {
-                    if (url.url === newUrl) {
-                        return res.status(201).json({ id: url.shortUrl });
-                    }
-                }
-                console.log('newUrl', newUrl);
-                if (!isValidURL(newUrl)) {
-                    return res.status(400).send('URL not valid');
-                } else {
-                    const shortUrl = generateShortUrl(newUrl);
-                    urls[user].push({ url: newUrl, shortUrl });
-                    return res.status(201).json({ id: shortUrl });
-                }
-            } else {
-                if (!isValidURL(newUrl)) {
-                    return res.status(400).send('URL not valid');
-                } else {
-                    const shortUrl = generateShortUrl(newUrl);
-                    urls[user] = [{ url: newUrl, shortUrl }];
-                    return res.status(201).json({ id: shortUrl });
-                }
+app.post('/', authenticateMiddleware, (req, res) => {
+    const user = req.body.user;
+    const newUrl = req.body.url;
+    if (Object.keys(urls).includes(user)) {
+        // 判断该用户是否已经存在该 URL
+        const userUrls = urls[user];
+        for (const url of userUrls) {
+            if (url.url === newUrl) {
+                return res.status(201).json({ id: url.shortUrl });
             }
-        })
-        .catch(error => {
-            res.status(403).send('Forbidden');
-        });
+        }
+        if (!isValidURL(newUrl)) {
+            return res.status(400).send('URL not valid');
+        } else {
+            const shortUrl = generateShortUrl(newUrl);
+            urls[user].push({ url: newUrl, shortUrl });
+            return res.status(201).json({ id: shortUrl });
+        }
+    } else {
+        if (!isValidURL(newUrl)) {
+            return res.status(400).send('URL not valid');
+        } else {
+            const shortUrl = generateShortUrl(newUrl);
+            urls[user] = [{ url: newUrl, shortUrl }];
+            return res.status(201).json({ id: shortUrl });
+        }
+    }
 });
 
 app.delete('/', (req, res) => {
-    for (const key in urls) {
-        delete urls[key];
-    }
-    res.status(404).send('404');
+
 });
 
 function isValidURL(url) {
     var urlPattern = new RegExp(
         "^https?:\/\/" + // 匹配以 http:// 或 https:// 开头
         "(?:" + // 开始非捕获组
-            "(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z]{2,6}\\.?" + // 匹配域名
-            "|" + // 或
-            "localhost" + // 匹配 localhost
-            "|" + // 或
-            "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}" + // 匹配 IPv4 地址
+        "(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z]{2,6}\\.?" + // 匹配域名
+        "|" + // 或
+        "localhost" + // 匹配 localhost
+        "|" + // 或
+        "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}" + // 匹配 IPv4 地址
         ")" + // 结束非捕获组
         "(?::\\d+)?" + // 匹配可选的端口号
         "(?:/?|[/?]\\S+)$" // 匹配可选的路径或查询字符串
