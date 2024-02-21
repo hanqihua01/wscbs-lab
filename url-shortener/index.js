@@ -14,12 +14,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const urls = {};
 
 const authenticateMiddleware = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(403).send('Forbidden');
-    const token = authHeader.split(' ')[1];
+    const token = req.headers.authorization;
     if (!token) return res.status(403).send('Forbidden');
 
-    axios.post('http://localhost:8000/users/authenticate', { token })
+    axios.post('http://localhost:8001/users/authenticate', { token })
         .then(response => {
             req.body.user = response.data.username;
             next();
@@ -58,7 +56,7 @@ app.get('/:id', authenticateMiddleware, (req, res) => {
     if (Object.keys(urls).includes(user)) {
         for (const url of urls[user]) {
             if (url.shortUrl === shortUrl) {
-                return res.status(301).json({ url: url.url });
+                return res.status(301).json({ value: url.url });
             }
         }
     }
@@ -101,15 +99,20 @@ app.delete('/:id', authenticateMiddleware, (req, res) => {
 app.get('/', authenticateMiddleware, (req, res) => {
     const user = req.body.user;
     if (Object.keys(urls).includes(user)) {
-        return res.status(200).json(urls[user]);
+        if (urls[user].length === 0) {
+            return res.status(200).json({});
+        } else {
+            return res.status(200).json(urls[user]);
+        }
     } else {
-        return res.status(200).json([]);
+        return res.status(200).json({});
     }
 });
 
 app.post('/', authenticateMiddleware, (req, res) => {
     const user = req.body.user;
-    const newUrl = req.body.url;
+    const newUrl = req.body.value;
+    console.log(user, newUrl);
     if (Object.keys(urls).includes(user)) {
         // 判断该用户是否已经存在该 URL
         const userUrls = urls[user];
@@ -169,6 +172,6 @@ function generateShortUrl(longUrl) {
     return shortUrl;
 }
 
-app.listen(8080, () => {
-    console.log('Server is running on port 8080');
+app.listen(8000, () => {
+    console.log('Server is running on port 8000');
 });
