@@ -112,7 +112,6 @@ app.get('/', authenticateMiddleware, (req, res) => {
 app.post('/', authenticateMiddleware, (req, res) => {
     const user = req.body.user;
     const newUrl = req.body.value;
-    console.log(user, newUrl);
     if (Object.keys(urls).includes(user)) {
         // 判断该用户是否已经存在该 URL
         const userUrls = urls[user];
