@@ -86,7 +86,7 @@ app.post('/users/authenticate', (req, res) => {
     
         const currentTimeInSeconds = Math.floor(Date.now() / 1000);
         if (payload.exp && payload.exp < currentTimeInSeconds) {
-            return res.status(401).json({ message: "Token expired" });
+            return res.status(403).json({ 'detail': 'forbidden' });
         }
     
         res.status(200).json({ username: payload.username });
