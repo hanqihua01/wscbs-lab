@@ -41,15 +41,13 @@ app.post('/users/login', async (req, res) => {
     const user = users[username];
     if (user && await bcrypt.compare(password, user.password)) {
         const header = JSON.stringify({ alg: 'HS256', typ: 'JWT' });
-        // const payload = JSON.stringify({ username: username, iat: Math.floor(Date.now() / 1000) });
+
         const expDurationSeconds = 60 * 60; // 1 hour
         const payload = JSON.stringify({
             username: username,
             iat: Math.floor(Date.now() / 1000),
             exp: Math.floor(Date.now() / 1000) + expDurationSeconds
         });
-
-
 
         const encodedHeader = Buffer.from(header).toString('base64url');
         const encodedPayload = Buffer.from(payload).toString('base64url');
