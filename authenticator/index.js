@@ -15,7 +15,7 @@ const users = {}; // 存储用户信息
 app.post('/users', async (req, res) => {
     const { username, password } = req.body;
     if (users[username]) {
-        return res.status(409).json({ 'detail': 'duplicate'});
+        return res.status(409).json({ 'detail': 'duplicate' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     users[username] = { password: hashedPassword };
@@ -31,7 +31,7 @@ app.put('/users', async (req, res) => {
         users[username].password = hashedPassword;
         res.status(200).send('Password updated');
     } else {
-        res.status(403).json({ 'detail': 'forbidden'});
+        res.status(403).json({ 'detail': 'forbidden' });
     }
 });
 
@@ -41,7 +41,15 @@ app.post('/users/login', async (req, res) => {
     const user = users[username];
     if (user && await bcrypt.compare(password, user.password)) {
         const header = JSON.stringify({ alg: 'HS256', typ: 'JWT' });
-        const payload = JSON.stringify({ username: username, iat: Math.floor(Date.now() / 1000) });
+        // const payload = JSON.stringify({ username: username, iat: Math.floor(Date.now() / 1000) });
+        const expDurationSeconds = 60 * 60; // 1 hour
+        const payload = JSON.stringify({
+            username: username,
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + expDurationSeconds
+        });
+
+
 
         const encodedHeader = Buffer.from(header).toString('base64url');
         const encodedPayload = Buffer.from(payload).toString('base64url');
@@ -52,7 +60,7 @@ app.post('/users/login', async (req, res) => {
         const token = `${encodedHeader}.${encodedPayload}.${signature}`;
         res.status(200).json({ token });
     } else {
-        res.status(403).json({ 'detail': 'forbidden'});
+        res.status(403).json({ 'detail': 'forbidden' });
     }
 });
 
@@ -71,14 +79,21 @@ app.post('/users/authenticate', (req, res) => {
         const expectedSignature = crypto.createHmac('sha256', secretKey)
             .update(signatureBase)
             .digest('base64url');
-
+    
         if (receivedSignatureEncoded !== expectedSignature) return res.sendStatus(403);
-
+    
         const payload = JSON.parse(Buffer.from(encodedPayload, 'base64').toString('ascii'));
+    
+        const currentTimeInSeconds = Math.floor(Date.now() / 1000);
+        if (payload.exp && payload.exp < currentTimeInSeconds) {
+            return res.status(401).json({ message: "Token expired" });
+        }
+    
         res.status(200).json({ username: payload.username });
     } catch (error) {
         return res.sendStatus(403);
     }
+    
 });
 
 app.listen(8001, () => {
