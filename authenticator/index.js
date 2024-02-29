@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const cors = require('cors');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -9,26 +10,39 @@ app.use(cors());
 app.use(express.json());
 
 const secretKey = process.env.JWT_SECRET; // 从环境变量中读取密钥
-const users = {}; // 存储用户信息
 
 // 注册
 app.post('/users', async (req, res) => {
+    const data = fs.readFileSync('users.json', 'utf8');
+    const users = JSON.parse(data);
+
     const { username, password } = req.body;
     if (users[username]) {
         return res.status(409).json({ 'detail': 'duplicate' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     users[username] = { password: hashedPassword };
+
+    const newData = JSON.stringify(users, null, 2);
+    fs.writeFileSync('users.json', newData, 'utf8');
+
     res.status(201).send('User created');
 });
 
 // 更新
 app.put('/users', async (req, res) => {
+    const data = fs.readFileSync('users.json', 'utf8');
+    const users = JSON.parse(data);
+
     const { username, 'password': oldPassword, 'new_password': newPassword } = req.body;
     const user = users[username];
     if (user && await bcrypt.compare(oldPassword, user.password)) {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         users[username].password = hashedPassword;
+
+        const newData = JSON.stringify(users, null, 2);
+        fs.writeFileSync('users.json', newData, 'utf8');
+
         res.status(200).send('Password updated');
     } else {
         res.status(403).json({ 'detail': 'forbidden' });
@@ -37,6 +51,9 @@ app.put('/users', async (req, res) => {
 
 // 登录
 app.post('/users/login', async (req, res) => {
+    const data = fs.readFileSync('users.json', 'utf8');
+    const users = JSON.parse(data);
+
     const { username, password } = req.body;
     const user = users[username];
     if (user && await bcrypt.compare(password, user.password)) {
@@ -64,6 +81,9 @@ app.post('/users/login', async (req, res) => {
 
 // 验证
 app.post('/users/authenticate', (req, res) => {
+    const data = fs.readFileSync('users.json', 'utf8');
+    const users = JSON.parse(data);
+
     const token = req.body.token;
     const tokenParts = token.split('.');
     if (tokenParts.length !== 3) return res.sendStatus(401);
