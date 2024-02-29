@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const fs = require('fs');
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const axios = require('axios');
@@ -10,8 +11,6 @@ app.use(bodyParser.json({
     }
 }));
 app.use(bodyParser.urlencoded({ extended: true }));
-
-const urls = {};
 
 const authenticateMiddleware = (req, res, next) => {
     const token = req.headers.authorization;
@@ -51,6 +50,9 @@ const authenticateMiddleware = (req, res, next) => {
 // }
 
 app.get('/:id', authenticateMiddleware, (req, res) => {
+    const data = fs.readFileSync('urls.json', 'utf8');
+    const urls = JSON.parse(data);
+
     const user = req.body.user;
     const shortUrl = req.params.id;
     if (Object.keys(urls).includes(user)) {
@@ -64,6 +66,9 @@ app.get('/:id', authenticateMiddleware, (req, res) => {
 });
 
 app.put('/:id', authenticateMiddleware, (req, res) => {
+    const data = fs.readFileSync('urls.json', 'utf8');
+    const urls = JSON.parse(data);
+
     const user = req.body.user;
     const shortUrl = req.params.id;
     const newUrl = req.body.url;
@@ -74,6 +79,10 @@ app.put('/:id', authenticateMiddleware, (req, res) => {
                     return res.status(400).send('URL not valid');
                 } else {
                     url.url = newUrl;
+
+                    const newData = JSON.stringify(urls, null, 2);
+                    fs.writeFileSync('urls.json', newData, 'utf8');
+                    
                     return res.status(200).send('Updated');
                 }
             }
@@ -83,12 +92,19 @@ app.put('/:id', authenticateMiddleware, (req, res) => {
 });
 
 app.delete('/:id', authenticateMiddleware, (req, res) => {
+    const data = fs.readFileSync('urls.json', 'utf8');
+    const urls = JSON.parse(data);
+
     const user = req.body.user;
     const shortUrl = req.params.id;
     if (Object.keys(urls).includes(user)) {
         for (let i = 0; i < urls[user].length; i++) {
             if (urls[user][i].shortUrl === shortUrl) {
                 urls[user].splice(i, 1);
+
+                const newData = JSON.stringify(urls, null, 2);
+                fs.writeFileSync('urls.json', newData, 'utf8');
+
                 return res.status(204).send('Deleted');
             }
         }
@@ -97,6 +113,9 @@ app.delete('/:id', authenticateMiddleware, (req, res) => {
 });
 
 app.get('/', authenticateMiddleware, (req, res) => {
+    const data = fs.readFileSync('urls.json', 'utf8');
+    const urls = JSON.parse(data);
+
     const user = req.body.user;
     if (Object.keys(urls).includes(user)) {
         if (urls[user].length === 0) {
@@ -110,6 +129,9 @@ app.get('/', authenticateMiddleware, (req, res) => {
 });
 
 app.post('/', authenticateMiddleware, (req, res) => {
+    const data = fs.readFileSync('urls.json', 'utf8');
+    const urls = JSON.parse(data);
+
     const user = req.body.user;
     const newUrl = req.body.value;
     if (Object.keys(urls).includes(user)) {
@@ -123,24 +145,39 @@ app.post('/', authenticateMiddleware, (req, res) => {
         if (!isValidURL(newUrl)) {
             return res.status(400).send('URL not valid');
         } else {
-            const shortUrl = generateShortUrl(newUrl);
+            const shortUrl = generateShortUrl(newUrl, urls);
             urls[user].push({ url: newUrl, shortUrl });
+
+            const newData = JSON.stringify(urls, null, 2);
+            fs.writeFileSync('urls.json', newData, 'utf8');
+
             return res.status(201).json({ id: shortUrl });
         }
     } else {
         if (!isValidURL(newUrl)) {
             return res.status(400).send('URL not valid');
         } else {
-            const shortUrl = generateShortUrl(newUrl);
+            const shortUrl = generateShortUrl(newUrl, urls);
             urls[user] = [{ url: newUrl, shortUrl }];
+
+            const newData = JSON.stringify(urls, null, 2);
+            fs.writeFileSync('urls.json', newData, 'utf8');
+
             return res.status(201).json({ id: shortUrl });
         }
     }
 });
 
 app.delete('/', authenticateMiddleware, (req, res) => {
+    const data = fs.readFileSync('urls.json', 'utf8');
+    const urls = JSON.parse(data);
+
     const user = req.body.user;
     urls[user] = [];
+
+    const newData = JSON.stringify(urls, null, 2);
+    fs.writeFileSync('urls.json', newData, 'utf8');
+
     return res.status(404).send('Deleted all URLs for the user');
 });
 
@@ -161,7 +198,7 @@ function isValidURL(url) {
     return urlPattern.test(url);
 }
 
-function generateShortUrl(longUrl) {
+function generateShortUrl(longUrl, urls) {
     let shortUrl;
     do {
         const hashObject = longUrl + Date.now();
