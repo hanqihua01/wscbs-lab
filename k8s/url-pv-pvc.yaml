@@ -1,0 +1,29 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: auth-pv
+  labels:
+    type: local
+    app: auth
+spec:
+  storageClassName: microk8s-hostpath
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/app"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: auth-pvc
+  labels:
+    app: auth
+spec:
+  storageClassName: microk8s-hostpath
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi

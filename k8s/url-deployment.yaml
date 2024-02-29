@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: url-deployment
+  labels:
+    app: url
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: url
+  template:
+    metadata:
+      labels:
+        app: url
+    spec:
+      serviceAccountName: url-sa
+      containers:
+        - name: url-container
+          image: hanqihua/url-shortener
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: url-persistent-storage
+            mountPath: /app
+  volumes:
+  - name: url-persistent-storage
+    persistentVolumeClaim:
+      claimName: url-pvc

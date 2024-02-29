@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  url-shortener:
+    image: hanqihua/url-shortener
+    ports:
+      - "8000:8000"
+    volumes:
+      - url-volume:/app
+    depends_on:
+      - authenticator
+
+  authenticator:
+    image: hanqihua/authenticator
+    ports:
+      - "8001:8001"
+    volumes:
+      - auth-volume:/app
+
+volumes:
+  url-volume:
+  auth-volume:

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-deployment
+  labels:
+    app: auth
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      serviceAccountName: auth-sa
+      containers:
+        - name: auth-container
+          image: hanqihua/authenticator
+          ports:
+            - containerPort: 8001
+          volumeMounts:
+            - name: auth-persistent-storage
+            mountPath: /app
+  volumes:
+  - name: auth-persistent-storage
+    persistentVolumeClaim:
+      claimName: auth-pvc
