@@ -16,7 +16,7 @@ const authenticateMiddleware = (req, res, next) => {
     const token = req.headers.authorization;
     if (!token) return res.status(403).send('Forbidden');
 
-    axios.post('http://localhost:8001/users/authenticate', { token })
+    axios.post('http://auth:8001/users/authenticate', { token })
         .then(response => {
             req.body.user = response.data.username;
             next();
